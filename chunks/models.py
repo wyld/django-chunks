@@ -33,6 +33,4 @@ class Chunk(models.Model):
             obj, c_ = Chunk.objects.get_or_create(key=key, defaults={'content': key}) 
             cache.set(cache_key, obj.content)
             content = obj.content
-        else:
-            content += '(from cache)'
         return content
