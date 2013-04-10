@@ -1,6 +1,8 @@
+from django.conf import settings
 from django.db import models
 from django.core.cache import cache
 from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import get_language
 
 
 CACHE_PREFIX = 'chunks_'
@@ -21,16 +23,20 @@ class Chunk(models.Model):
         return self.key
     
     def save(self, *args, **kwargs):
-        cache.delete(CACHE_PREFIX + self.key) # cache invalidation on save
+        # cache invalidation on save
+        cache.delete(CACHE_PREFIX + self.key)
+        for language in settings.LANGUAGES:
+            cache.delete(CACHE_PREFIX + self.key + language[0])
+
         super(Chunk, self).save(*args, **kwargs)
     
     
     @staticmethod
     def get(key):
-        cache_key = CACHE_PREFIX + key
+        cache_key = CACHE_PREFIX + key + get_language()
         content = cache.get(cache_key)
         if content is None:
-            obj, c_ = Chunk.objects.get_or_create(key=key, defaults={'content': key}) 
+            obj, c_ = Chunk.objects.get_or_create(key=key, defaults={'content': key})
             cache.set(cache_key, obj.content)
             content = obj.content
         return content
